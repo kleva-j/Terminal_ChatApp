@@ -9,7 +9,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 const { log, error } = console;
-log(process.env.host);
+
 const validateUser = async (password) => {
   const res = await axios.post('https://trim-chat.herokuapp.com/auth', { password });
   return res;
