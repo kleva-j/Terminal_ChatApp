@@ -5,11 +5,13 @@ import axios from 'axios';
 import prompt from 'prompt';
 import util from 'util';
 import chalk from 'chalk';
+import dotenv from 'dotenv';
 
+dotenv.config();
 const { log, error } = console;
-
+log(process.env.host);
 const validateUser = async (password) => {
-  const res = await axios.post('http://localhost:2018/auth', { password });
+  const res = await axios.post('https://trim-chat.herokuapp.com/auth', { password });
   return res;
 };
 
@@ -37,7 +39,7 @@ const startApp = async () => {
 
     const { username } = await get(userSchema[0]);
 
-    const socket = io('http://localhost:2018', {
+    const socket = io('https://trim-chat.herokuapp.com', {
       path: '/chat',
     });
 
