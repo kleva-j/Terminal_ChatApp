@@ -1,4 +1,4 @@
-import $io from 'socket.io';
+import io from 'socket.io';
 import { urlencoded, json } from 'body-parser';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -24,7 +24,11 @@ const options = {
   cookie: false,
 };
 
-const io = $io(http, options);
+const $io = io(http, options);
+
+server.get('/', (req, res) => {
+  res.send('Welcome to Trim_Chat');
+});
 
 server.post('/auth', (req, res) => {
   const salt = bcrypt.genSaltSync(8);
@@ -59,7 +63,7 @@ const random = () => Math.floor(Math.random() * (colors.length - 1));
 
 const sockets = [];
 
-io.on('connection', (socket) => {
+$io.on('connection', (socket) => {
   const { id } = socket;
   const color = colors[random()];
   sockets.push({ id, color });
