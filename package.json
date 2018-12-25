@@ -1,0 +1,22 @@
+{
+  "name": "terminal_chatapp",
+  "version": "1.0.0",
+  "description": "A command line chat app",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kleva-j/Terminal_ChatApp.git"
+  },
+  "keywords": [
+    "command-line"
+  ],
+  "author": "Michael Obasi",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/kleva-j/Terminal_ChatApp/issues"
+  },
+  "homepage": "https://github.com/kleva-j/Terminal_ChatApp#readme"
+}
