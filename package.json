@@ -5,8 +5,8 @@
   "main": "server.js",
   "scripts": {
     "start": "npm run build && node dist/server.js ",
-    "dev": "NODE_ENV=development nodemon --exec babel-node server.js",
-    "build": "npm run clean && babel server.js --out-dir ./dist",
+    "dev": "NODE_ENV=development nodemon --exec babel-node server/server.js",
+    "build": "npm run clean && babel server/ --out-dir ./dist",
     "clean": "rm -rf dist && mkdir dist"
   },
   "repository": {
