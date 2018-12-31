@@ -10,10 +10,13 @@ import inputValidator from './util/settings';
 
 const { log, error } = console;
 
+const host = ['http://localhost:2018', 'https://trim-chat.herokuapp.com'];
+
 const validateUser = async (password) => {
-  const res = await axios.post('http://localhost:2018/auth', { password });
+  const res = await axios.post(`${host[1]}/auth`, { password });
   return res;
 };
+
 
 const renderMessage = (color, name, msg) => {
   switch (color) {
@@ -75,7 +78,6 @@ const startApp = async () => {
 
     const { username } = await get(userSchema[0]);
 
-    const host = ['http://localhost:2018', 'https://trim-chat.herokuapp.com'];
     const socket = io(host[1], {
       path: '/chat',
     });
