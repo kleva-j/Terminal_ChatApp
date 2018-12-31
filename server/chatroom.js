@@ -1,3 +1,4 @@
+/* eslint-disable no-param-reassign */
 /* eslint-disable class-methods-use-this */
 
 class Chatroom {
@@ -14,32 +15,39 @@ class Chatroom {
     return this.members.set(client.id, newClient);
   }
 
-  removeMember(clientName, requester) {
-    if (requester.name === this.creator) {
-      const client = Array.from(this.members.values()).find(user => user.name === clientName);
-      this.members.delete(client.id);
-    }
+  removeMember(clientId) {
+    this.members.get(clientId).chatroom = null;
+    this.members.delete(clientId);
+  }
+
+  dropAllMembers() {
+    this.members.forEach((m) => {
+      m.chatroom = null;
+      this.members.delete(m.id);
+    });
   }
 
   getChatHistory() {
     return this.chatHistory.slice();
   }
 
-  broadcastMessage(message, client, socket) {
+  broadcastMessage(message, { name: sender, color }, socket) {
     this.members.forEach((m) => {
-      if (m.name === client) return;
-      socket.to(`${m.id}`).emit('Chatroom Message', {
+      if (m.name === sender) return;
+      socket.to(`${m.id}`).emit('message', {
+        sender,
         message,
-        sender: client,
+        color,
       });
     });
-    return this.addChatMessage({ clientName: client.name, message });
+    return this.addChatMessage({ clientName: sender, message });
   }
 
-  sendDirectMessage(socket, sender, receiver, message) {
-    socket.to(`${receiver.id}`).emit('Direct Message', {
+  sendDirectMessage(socket, name, receiver, message) {
+    const receipient = Array.from(this.members.values()).find(item => item.name === receiver);
+    socket.to(`${receipient.id}`).emit('Direct Message', {
       message,
-      sender,
+      name,
     });
   }
 
@@ -47,8 +55,7 @@ class Chatroom {
    * @description adds a chat message to the chat history
    * @param {Object} entry chat object
    */
-  addChatMessage(entry) {
-    const { clientName, message } = entry;
+  addChatMessage({ clientName, message }) {
     return this.chatHistory.push({
       sender: clientName,
       message,
@@ -60,10 +67,10 @@ class Chatroom {
    * @returns {Array} a list of users in chatroom
    */
   getAllMembers() {
-    return Array.from(this.members.keys());
+    return Array.from(this.members.values()).map(user => user.name);
   }
 
-  serailize() {
+  serialize() {
     return {
       name: this.name,
       users: this.members.size,

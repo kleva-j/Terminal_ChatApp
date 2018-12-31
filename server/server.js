@@ -99,22 +99,25 @@ $io.on('connection', (socket) => {
     log(`${socket.id} had this error - ${error}`);
   });
 
-  socket.on('View chatroom members', (_, fn) => {
-    const members = chatManager.getAllUsersInChatRoom(socket.id).join(', ');
-    fn(members);
+  socket.on('View chatroom members', (fn) => {
+    const results = chatManager.getAllUsersInChatRoom(socket.id);
+    fn(results);
   });
 
-  socket.on('Get all chatrooms', (_, fn) => {
-    const chatrooms = chatManager.serializeChatRooms().join(', ');
-    fn(chatrooms);
+  socket.on('List all chatrooms', (fn) => {
+    const results = chatManager.serializeChatRooms();
+    fn(results);
   });
 
-  socket.on('Chatroom message', (message) => {
-    chatManager.sendMessageToRoom(message, socket.id, $io);
+  socket.on('Chatroom message', (message, fn) => {
+    const result = chatManager.sendMessageToRoom(message, socket.id, $io);
+    if (result) fn(result);
   });
 
-  socket.on('Direct message', (message, receiver) => {
-    chatManager.sendADirectMessage(message, socket.id, receiver, $io);
+  socket.on('Direct message', (payload, fn) => {
+    const { receipient, mssg } = payload;
+    const result = chatManager.sendADirectMessage(mssg, socket.id, receipient, $io);
+    if (result) fn(result);
   });
 });
 

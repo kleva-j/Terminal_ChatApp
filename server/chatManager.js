@@ -10,10 +10,11 @@ class ChatManager {
 
   createChatRoom(clientId, chatroomName) {
     const user = this.users.get(clientId);
-    const chatroom = this.chatrooms.get(chatroomName);
     if (user.chatroom) return `You already belong to a chatroom ${user.chatroom}`;
-    if (chatroom) return 'Chatroom already exits';
+    const isAvaliable = this.chatrooms.has(chatroomName);
+    if (isAvaliable) return 'Chatroom already exits';
     const room = new Chatroom(chatroomName, user.name);
+    user.chatroom = room.name;
     room.addNewMember(user);
     this.chatrooms.set(chatroomName, room);
     return 'Chatroom has been created successfully';
@@ -21,28 +22,33 @@ class ChatManager {
 
   deleteChatRoom(chatroomName, clientId) {
     const user = this.users.get(clientId);
+    const isAvaliable = this.chatrooms.has(chatroomName);
+    if (!isAvaliable) return `The chatroom (${chatroomName}) - does not exist.`;
     const chatroom = this.chatrooms.get(chatroomName);
-    if (chatroom.creator !== user.name) return 'Permission denied, You are not the owner of the chatroom';
+    if (chatroom.creator !== user.name) return 'Request denied. You are not the owner of the chatroom.';
+    chatroom.dropAllMembers();
     this.chatrooms.delete(chatroomName);
-    return 'Chatroom deleted successfully';
+    return ' Chatroom deleted successfully';
   }
 
   leaveChatRoom(clientId) {
     const user = this.users.get(clientId);
-    const chatroom = this.chatrooms.get(user.chatroom);
     if (!user.chatroom) return 'You do not belong to a chatroom';
+    const chatroom = this.chatrooms.get(user.chatroom);
+    let result = '';
     if (chatroom.creator === user.name) {
-      this.deleteChatRoom(user.chatroom, clientId);
+      result = (this.deleteChatRoom(user.chatroom, clientId));
     }
-    this.users.get(clientId).chatroom = null;
-    return `You have now left the ${chatroom.name} chatroom`;
+    chatroom.removeMember(clientId);
+    return `You have now left the '${chatroom.name}' chatroom.${result}`;
   }
 
   joinChatRoom(clientId, chatroomName) {
     const user = this.users.get(clientId);
+    const isAvaliable = this.chatrooms.has(chatroomName);
+    if (!isAvaliable) return `The chatroom (${chatroomName}) - does not exist.`;
     const chatroom = this.chatrooms.get(chatroomName);
     if (user.chatroom) return `You already belong to a chatroom - ${user.chatroom}`;
-    if (!chatroom) return `The chatroom (${chatroomName}) - does not exist.`;
     chatroom.addNewMember(user);
     this.users.get(clientId).chatroom = chatroom.name;
     return `You have successfully joined ${chatroom.name}`;
@@ -53,27 +59,41 @@ class ChatManager {
     if (user) return 'User has already been registered';
     const client = new Client(name, socket, color);
     this.users.set(client.id, client);
-    return 'User registered successfully';
+    return 'User registration complete';
   }
 
   deleteUser(clientId) {
     const user = this.users.get(clientId);
-    let chatroom;
-    if (user.chatroom) {
-      chatroom = this.chatrooms.get(user.chatroom);
-      chatroom.members.delete(user.name);
-    }
+    if (!user.chatroom) return 'You do not belong to a chatroom';
+    const chatroom = this.chatrooms.get(user.chatroom);
+    chatroom.members.delete(user.name);
     this.users.delete(user.id);
   }
 
+  /**
+   *
+   * @param {string} message the message
+   * @param {string} clientId the id of the sender
+   * @param {Object} socket the server socket
+   */
   sendMessageToRoom(message, clientId, socket) {
     const user = this.users.get(clientId);
-    const chatroom = this.chatrooms(user.chatroom);
-    chatroom.broadcastMessage(message, user.name, socket);
+    if (!user.chatroom) return 'You do not belong to a chatroom';
+    const { name, color, chatroom: room } = user;
+    const chatroom = this.chatrooms.get(room);
+    chatroom.broadcastMessage(message, { name, color }, socket);
   }
 
+  /**
+   *
+   * @param {string} message the message
+   * @param {string} clientId the id of the sender
+   * @param {string} receiver the name of the receipient
+   * @param {Object} socket the server socket
+   */
   sendADirectMessage(message, clientId, receiver, socket) {
     const user = this.users.get(clientId);
+    if (!user) return 'You do not belong to a chatroom';
     const chatroom = this.chatrooms.get(user.chatroom);
     chatroom.sendDirectMessage(socket, user.name, receiver, message);
   }
@@ -88,10 +108,10 @@ class ChatManager {
    * @param {String} clientId the client id
    * @returns {Array} an array of all the members of the chatroom
    */
-  getAllUsersInChatRoom(chatroomName, clientId) {
+  getAllUsersInChatRoom(clientId) {
     const user = this.users.get(clientId);
-    const chatroom = this.chatrooms.get(chatroomName);
-    if (user.chatroom !== chatroomName) return 'Not granted, you are not a member of this chatroom';
+    if (!user.chatroom) return 'You do not belong to a chatroom';
+    const chatroom = this.chatrooms.get(user.chatroom);
     return chatroom.getAllMembers();
   }
 
