@@ -5,14 +5,50 @@ import axios from 'axios';
 import prompt from 'prompt';
 import util from 'util';
 import chalk from 'chalk';
-import dotenv from 'dotenv';
+import gettingStarted from './util/gettingStarted';
+import inputValidator from './util/settings';
 
-dotenv.config();
 const { log, error } = console;
 
 const validateUser = async (password) => {
-  const res = await axios.post('https://trim-chat.herokuapp.com/auth', { password });
+  const res = await axios.post('http://localhost:2018/auth', { password });
   return res;
+};
+
+const renderMessage = (color, name, msg) => {
+  switch (color) {
+    case 'red':
+      log(`${chalk.italic.bold(chalk.red(name))}: ${chalk.white(msg)}`);
+      break;
+
+    case 'blue':
+      log(`${chalk.italic.bold(chalk.blue(name))}: ${chalk.white(msg)}`);
+      break;
+
+    case 'yellow':
+      log(`${chalk.italic.bold(chalk.yellow(name))}: ${chalk.white(msg)}`);
+      break;
+
+    case 'green':
+      log(`${chalk.italic.bold(chalk.green(name))}: ${chalk.white(msg)}`);
+      break;
+
+    case 'magenta':
+      log(`${chalk.italic.bold(chalk.magenta(name))}: ${chalk.white(msg)}`);
+      break;
+
+    case 'cyan':
+      log(`${chalk.italic.bold(chalk.cyan(name))}: ${chalk.white(msg)}`);
+      break;
+
+    case 'gray':
+      log(`${chalk.italic.bold(chalk.gray(name))}: ${chalk.white(msg)}`);
+      break;
+
+    default:
+      log(`${chalk.italic.bold(chalk.bgRed(name))}: ${chalk.white(msg)}`);
+      break;
+  }
 };
 
 const startApp = async () => {
@@ -39,7 +75,8 @@ const startApp = async () => {
 
     const { username } = await get(userSchema[0]);
 
-    const socket = io('https://trim-chat.herokuapp.com', {
+    // const socket = io('https://trim-chat.herokuapp.com', {
+    const socket = io('http://localhost:2018', {
       path: '/chat',
     });
 
@@ -49,52 +86,82 @@ const startApp = async () => {
 
     socket.on('user connected', (data) => {
       log(chalk.yellow(`New user: ${data} has joined`));
+      socket.emit('Register', username, (data) => {
+        log(data);
+        gettingStarted();
+      });
     });
 
     const input = createInterface({
       input: process.stdin,
     });
 
-    socket.emit('Join Chatroom', username);
+    socket.on('message', ({ sender, message: msg, color }) => {
+      renderMessage(color, sender, msg);
+    });
 
-    socket.on('message', ({ name, msg, cl }) => {
-      switch (cl) {
-        case 'red':
-          log(`${chalk.bold(chalk.red(name))}: ${chalk.italic(chalk.white(msg))}`);
+    socket.on('Direct Message', ({ name, message: msg }) => {
+      log(`${chalk.bold.white('Direct Message =>')}${chalk.italic.bold.cyan(name)}: ${chalk.white(msg)}`);
+    });
+
+    input.on('line', async (value) => {
+      const {
+        inputType, message: mssg, chatroom, receipient,
+      } = inputValidator(value);
+
+      switch (inputType) {
+        case 'create room':
+          socket.emit('Create chatroom', chatroom, (result) => {
+            log(result);
+          });
           break;
 
-        case 'blue':
-          log(`${chalk.bold(chalk.blue(name))}: ${chalk.italic(chalk.white(msg))}`);
+        case 'join':
+          socket.emit('Join chatroom', chatroom, (result) => {
+            log(result);
+          });
           break;
 
-        case 'yellow':
-          log(`${chalk.bold(chalk.yellow(name))}: ${chalk.italic(chalk.white(msg))}`);
+        case 'leave':
+          socket.emit('Leave chatroom', chatroom, (result) => {
+            log(result);
+          });
           break;
 
-        case 'green':
-          log(`${chalk.bold(chalk.green(name))}: ${chalk.italic(chalk.white(msg))}`);
+        case 'delete room':
+          socket.emit('Delete chatroom', chatroom, (result) => {
+            log(result);
+          });
           break;
 
-        case 'magenta':
-          log(`${chalk.bold(chalk.magenta(name))}: ${chalk.italic(chalk.white(msg))}`);
+        case 'list members':
+          socket.emit('View chatroom members', (result) => {
+            log(result);
+          });
           break;
 
-        case 'cyan':
-          log(`${chalk.bold(chalk.cyan(name))}: ${chalk.italic(chalk.white(msg))}`);
+        case 'list chatrooms':
+          socket.emit('List all chatrooms', (result) => {
+            log(result);
+          });
           break;
 
-        case 'gray':
-          log(`${chalk.bold(chalk.gray(name))}: ${chalk.italic(chalk.white(msg))}`);
+        case 'Chatroom message':
+          socket.emit('Chatroom message', mssg, (result) => {
+            log(result);
+          });
+          break;
+
+        case 'Direct message':
+          socket.emit('Direct message', { mssg, receipient }, (result) => {
+            log(result);
+          });
           break;
 
         default:
-          log(`${chalk.bold(chalk.bgRed(name))}: ${chalk.italic(chalk.white(msg))}`);
+          log('try "trim_chat --help" for help on how to use app');
           break;
       }
-    });
-
-    input.on('line', async (msg) => {
-      socket.emit('message', msg);
     });
   } catch (err) {
     error(chalk.red(err));
