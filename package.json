@@ -4,10 +4,9 @@
   "description": "A command line chat app",
   "main": "server.js",
   "scripts": {
-    "start": "npm run build && node dist/server.js ",
-    "dev": "NODE_ENV=development nodemon --exec babel-node server/server.js",
-    "build": "npm run clean && babel server/ --out-dir ./dist",
-    "clean": "rm -rf dist && mkdir dist"
+    "start": "npm run build && node dist/client.js",
+    "client": "babel-node -- client.js",
+    "build": "npm run clean && babel client.js --out-dir ./dist",
   },
   "repository": {
     "type": "git",
