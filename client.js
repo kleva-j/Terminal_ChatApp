@@ -75,8 +75,8 @@ const startApp = async () => {
 
     const { username } = await get(userSchema[0]);
 
-    // const socket = io('https://trim-chat.herokuapp.com', {
-    const socket = io('http://localhost:2018', {
+    const host = ['http://localhost:2018', 'https://trim-chat.herokuapp.com'];
+    const socket = io(host[0], {
       path: '/chat',
     });
 
