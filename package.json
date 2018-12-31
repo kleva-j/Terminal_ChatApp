@@ -6,7 +6,7 @@
   "scripts": {
     "start": "npm run build && node dist/client.js",
     "client": "babel-node -- client.js",
-    "build": "npm run clean && babel client.js --out-dir ./dist",
+    "build": "npm run clean && babel client.js --out-dir ./dist"
   },
   "repository": {
     "type": "git",
