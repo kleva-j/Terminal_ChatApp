@@ -84,12 +84,9 @@ const startApp = async () => {
       log(chalk.green(`You (${username}) are connected`));
     });
 
-    socket.on('user connected', (data) => {
-      log(chalk.yellow(`New user: ${data} has joined`));
-      socket.emit('Register', username, (data) => {
-        log(data);
-        gettingStarted();
-      });
+    socket.emit('Register', username, (data) => {
+      log(data);
+      gettingStarted();
     });
 
     const input = createInterface({
