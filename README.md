@@ -1,4 +1,4 @@
-# Terminal_ChatApp
+# XTerminal
 
 A command_line chat application where users can send and receive messages from other member of the chat group.
 
