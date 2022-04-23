@@ -34,21 +34,14 @@ class Chatroom {
   broadcastMessage(message, { name: sender, color }, socket) {
     this.members.forEach((m) => {
       if (m.name === sender) return;
-      socket.to(`${m.id}`).emit('message', {
-        sender,
-        message,
-        color,
-      });
+      socket.to(`${m.id}`).emit('message', { sender, message, color });
     });
     return this.addChatMessage({ clientName: sender, message });
   }
 
   sendDirectMessage(socket, name, receiver, message) {
     const receipient = Array.from(this.members.values()).find(item => item.name === receiver);
-    socket.to(`${receipient.id}`).emit('Direct Message', {
-      message,
-      name,
-    });
+    socket.to(`${receipient.id}`).emit('Direct Message', { message, name });
   }
 
   /**
@@ -56,10 +49,7 @@ class Chatroom {
    * @param {Object} entry chat object
    */
   addChatMessage({ clientName, message }) {
-    return this.chatHistory.push({
-      sender: clientName,
-      message,
-    });
+    return this.chatHistory.push({ sender: clientName, message });
   }
 
   /**

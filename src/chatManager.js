@@ -115,8 +115,12 @@ class ChatManager {
     return chatroom.getAllMembers();
   }
 
+  /**
+   * @memberof ChatManager
+   * @returns {Array} an array of available/open chatrooms names
+   */
   getAllChatRooms() {
-    return Array.from(this.chatrooms.values()).map(room => room.name);
+    return Array.from(this.chatrooms.values()).map(c => c.name);
   }
 
   /**

@@ -1,114 +1,61 @@
+/* eslint-disable global-require */
 import '@babel/polyfill/noConflict';
+
 import io from 'socket.io-client';
-import { createInterface } from 'readline';
-import axios from 'axios';
-import prompt from 'prompt';
-import util from 'util';
+import readline from 'readline';
 import chalk from 'chalk';
-import gettingStarted from './util/gettingStarted';
-import inputValidator from './util/settings';
 
-const { log, error } = console;
+import { stdin, stdout } from 'process';
+import { prompt } from 'inquirer';
 
-const host = ['http://localhost:2018', 'https://trim-chat.herokuapp.com'];
+import {
+  GettingStarted,
+  InputValidator,
+  RenderMessage,
+  ValidateUser,
+  InquireInfo,
+  error,
+  Host,
+  log,
+} from './util';
 
-const validateUser = async (password) => {
-  const res = await axios.post(`${host[1]}/auth`, { password });
-  return res;
-};
-
-
-const renderMessage = (color, name, msg) => {
-  switch (color) {
-    case 'red':
-      log(`${chalk.italic.bold(chalk.red(name))}: ${chalk.white(msg)}`);
-      break;
-
-    case 'blue':
-      log(`${chalk.italic.bold(chalk.blue(name))}: ${chalk.white(msg)}`);
-      break;
-
-    case 'yellow':
-      log(`${chalk.italic.bold(chalk.yellow(name))}: ${chalk.white(msg)}`);
-      break;
-
-    case 'green':
-      log(`${chalk.italic.bold(chalk.green(name))}: ${chalk.white(msg)}`);
-      break;
-
-    case 'magenta':
-      log(`${chalk.italic.bold(chalk.magenta(name))}: ${chalk.white(msg)}`);
-      break;
-
-    case 'cyan':
-      log(`${chalk.italic.bold(chalk.cyan(name))}: ${chalk.white(msg)}`);
-      break;
-
-    case 'gray':
-      log(`${chalk.italic.bold(chalk.gray(name))}: ${chalk.white(msg)}`);
-      break;
-
-    default:
-      log(`${chalk.italic.bold(chalk.bgRed(name))}: ${chalk.white(msg)}`);
-      break;
-  }
-};
+const { createInterface } = readline;
 
 const startApp = async () => {
   try {
-    prompt.start();
-    prompt.message = '';
-    const get = util.promisify(prompt.get);
-    log(chalk.cyan('---------------  SIGN IN  ---------------'));
-    const userSchema = [{
-      description: 'Enter a username',
-      name: 'username',
-      required: true,
-    },
-    {
-      description: 'Enter password',
-      name: 'password',
-      required: true,
-    }];
+    const { username, password } = await InquireInfo();
 
-    const { password } = await get(userSchema[1]);
-    const { status, message } = (await validateUser(password)).data;
+    const { status, message } = (await ValidateUser(password)).data;
 
-    if (status !== 200 && message !== 'Success') throw new Error('Incorrect password');
+    if (status !== 200 && message !== 'Success') { throw new Error('Incorrect password'); }
 
-    const { username } = await get(userSchema[0]);
+    const socket = io(Host, { path: '/chat' });
 
-    const socket = io(host[1], {
-      path: '/chat',
-    });
+    socket.on('connect', () => log(chalk.green(`You (${username}) are connected`)));
 
-    socket.on('connect', () => {
-      log(chalk.green(`You (${username}) are connected`));
-    });
+    socket.emit('Register', username, GettingStarted);
 
-    socket.emit('Register', username, (data) => {
-      log(data);
-      gettingStarted();
-    });
+    const input = createInterface({ input: stdin, output: stdout });
 
-    const input = createInterface({
-      input: process.stdin,
-    });
-
-    socket.on('message', ({ sender, message: msg, color }) => {
-      renderMessage(color, sender, msg);
-    });
+    socket.on('message', ({ sender, message: msg, color }) => RenderMessage(color, sender, msg));
 
     socket.on('Direct Message', ({ name, message: msg }) => {
-      log(`${chalk.bold.white('Direct Message =>')}${chalk.italic.bold.cyan(name)}: ${chalk.white(msg)}`);
+      log(
+        `${chalk.bold.white('Direct Message =>')}${chalk.italic.bold.cyan(
+          name,
+        )}: ${chalk.white(msg)}`,
+      );
     });
 
     input.on('line', async (value) => {
       const {
-        inputType, message: mssg, chatroom, receipient,
-      } = inputValidator(value);
+        inputType,
+        message: mssg,
+        chatroom,
+        receipient,
+      } = InputValidator(value);
 
-      switch (inputType) {
+      switch (inputType.trim()) {
         case 'create room':
           socket.emit('Create chatroom', chatroom, (result) => {
             log(result);
@@ -140,8 +87,21 @@ const startApp = async () => {
           break;
 
         case 'list chatrooms':
-          socket.emit('List all chatrooms', (result) => {
-            log(result);
+          socket.emit('List all chatrooms', async (rooms) => {
+            if (rooms && rooms.length > 0) {
+              input.close();
+              const { room } = await prompt({
+                type: 'list',
+                name: 'room',
+                choices: rooms.concat(['cancel']),
+                message: 'Available chatrooms',
+              });
+
+              if (room && room.includes('cancel')) return;
+
+              socket.emit('Join chatroom', room, result => log(result));
+            }
+            log(chalk.green('>>> No chatrooms available'));
           });
           break;
 
@@ -161,11 +121,12 @@ const startApp = async () => {
           log('try "trim_chat --help" for help on how to use app');
           break;
       }
-    });
+    }).on('error', err => log(err));
   } catch (err) {
     error(chalk.red(err));
     process.exit(0);
   }
 };
+
 
 startApp();

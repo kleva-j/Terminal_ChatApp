@@ -5,8 +5,15 @@
   "main": "server.js",
   "scripts": {
     "start": "npm run build && node dist/client.js",
+    "dev:server": "nodemon -r esm src/server.js",
+    "dev:client": "nodemon -r esm client.js",
+    "start:server": "node -r esm src/server.js",
+    "start:client": "node -r esm client.js",
+    "dev": "node -r esm client.js",
     "client": "babel-node -- client.js",
-    "build": "npm run clean && babel client.js --out-dir ./dist"
+    "build": "npm run clean && babel client.js --out-dir ./dist && npm run cp_dep",
+    "cp_dep": "babel util/ --out-dir ./dist/util",
+    "clean": "rm -rf dist && mkdir dist"
   },
   "repository": {
     "type": "git",
@@ -18,7 +25,7 @@
     ]
   },
   "engines": {
-    "node": "10.x"
+    "node": "14.x"
   },
   "keywords": [
     "command-line"
@@ -31,24 +38,30 @@
   "homepage": "https://github.com/kleva-j/Terminal_ChatApp#readme",
   "dependencies": {
     "@babel/polyfill": "^7.2.3",
-    "axios": "^0.18.0",
+    "axios": "^0.25.0",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.18.3",
     "chalk": "^2.4.1",
+    "chalk-animation": "^1.6.0",
     "cors": "^2.8.5",
-    "dotenv": "^6.2.0",
+    "dotenv": "^16.0.0",
     "express": "^4.16.4",
-    "helmet": "^3.15.0",
-    "prompt": "^1.0.0",
-    "socket.io": "^2.2.0",
-    "socket.io-client": "^2.2.0"
+    "figlet": "^1.5.2",
+    "gradient-string": "^2.0.0",
+    "helmet": "^5.0.2",
+    "inquirer": "^8.2.0",
+    "nanospinner": "^1.0.0",
+    "socket.io": "^4.4.1",
+    "socket.io-client": "^4.4.1"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
     "babel-core": "^6.26.3",
     "babel-preset-env": "^1.7.0",
-    "eslint": "^5.11.0",
+    "eslint": "^8.8.0",
     "eslint-config-airbnb-base": "^13.1.0",
-    "eslint-plugin-import": "^2.14.0"
+    "eslint-plugin-import": "^2.14.0",
+    "esm": "^3.2.25",
+    "nodemon": "^2.0.15"
   }
 }
